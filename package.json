@@ -15,7 +15,7 @@
     "react-scripts": "^5.0.1",
     "web-vitals": "^2.1.4"
   },
-  "homepage": "https://aditya01889.github.io/cozycatkitchen/",
+  "homepage": "https://aditya01889.github.io/cozy-cat-kitchen",
   "scripts": {
     "predeploy": "npm run build",
     "deploy": "gh-pages -d build",
