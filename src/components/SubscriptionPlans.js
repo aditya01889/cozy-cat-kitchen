@@ -13,7 +13,7 @@ const subscriptions = [
     delivery: 'Free Weekly Delivery',
     savings: 'Save ₹201/week',
     image: `${process.env.PUBLIC_URL}/images/kitten-box.png`,
-    planId: 'razorpay_kitten_plan_id' // Replace with actual Razorpay Plan ID
+    planId: 'plan_P16C8fYlOuifli' // Replace with actual Razorpay Plan ID
   },
   {
     name: 'Cat Subscription',
@@ -24,7 +24,7 @@ const subscriptions = [
     delivery: 'Free Weekly Delivery',
     savings: 'Save ₹261/week',
     image: `${process.env.PUBLIC_URL}/images/cat-box.png`,
-    planId: 'razorpay_cat_plan_id' // Replace with actual Razorpay Plan ID
+    planId: 'plan_P16CnSJeddGUF3' // Replace with actual Razorpay Plan ID
   }
 ];
 
@@ -45,7 +45,7 @@ const SubscriptionPlans = () => {
   const handleFormSubmit = async (formData) => {
     try {
       // Step 1: Create Razorpay subscription
-      const razorpayResponse = await axios.post('/create-razorpay-subscription', {
+      const razorpayResponse = await axios.post('https://cozycatkitchen-backend.vercel.app/create-razorpay-subscription', {
         planId: selectedPlan.planId,
         email: formData.email,
         phone: formData.phone
@@ -62,7 +62,7 @@ const SubscriptionPlans = () => {
         handler: function (response) {
           alert('Payment Successful!');
           // Shiprocket order creation
-          axios.post('/create-shiprocket-order', {
+          axios.post('https://cozycatkitchen-backend.vercel.app/create-shiprocket-order', {
             ...formData,
             cart: [
               {
