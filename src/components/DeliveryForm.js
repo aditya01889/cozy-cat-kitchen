@@ -4,7 +4,7 @@ import './DeliveryForm.css';
 
 Modal.setAppElement('#root');  // Set the root element for accessibility
 
-const DeliveryForm = ({ isOpen, onRequestClose, onSubmit }) => {
+const DeliveryForm = ({ isOpen, onRequestClose, onSubmit, cart }) => {
   const [formData, setFormData] = useState({
     name: '',
     address: '',
@@ -19,7 +19,12 @@ const DeliveryForm = ({ isOpen, onRequestClose, onSubmit }) => {
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    onSubmit(formData);
+    
+    // Pass the form data along with the cart to the parent component
+    onSubmit({
+      ...formData,
+      cart  // Include the cart with all selected products and quantities
+    });
   };
 
   return (

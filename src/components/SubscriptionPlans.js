@@ -13,7 +13,7 @@ const subscriptions = [
     delivery: 'Free Weekly Delivery',
     savings: 'Save ₹201/week',
     image: `${process.env.PUBLIC_URL}/images/kitten-box.png`,
-    planId: 'plan_P16C8fYlOuifli' // Replace with actual Razorpay Plan ID
+    planId: 'plan_P16C8fYlOuifli'  // Razorpay Plan ID
   },
   {
     name: 'Cat Subscription',
@@ -24,54 +24,64 @@ const subscriptions = [
     delivery: 'Free Weekly Delivery',
     savings: 'Save ₹261/week',
     image: `${process.env.PUBLIC_URL}/images/cat-box.png`,
-    planId: 'plan_P16CnSJeddGUF3' // Replace with actual Razorpay Plan ID
+    planId: 'plan_P16CnSJeddGUF3'  // Razorpay Plan ID
   }
 ];
 
 const SubscriptionPlans = () => {
-  const [quantities, setQuantities] = useState([1, 1]);  // Quantity for both subscriptions
+  const [quantities, setQuantities] = useState([0, 0]);  // Allow zero quantities for both subscriptions
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState(null);
+  const [cart, setCart] = useState([]);  // Cart to hold selected products and quantities
 
-  const handleBuyNow = (subscription) => {
-    setSelectedPlan(subscription);
-    setIsModalOpen(true);
+  const updateCart = () => {
+    const newCart = subscriptions
+      .map((subscription, index) => ({
+        name: subscription.name,
+        sku: `SUB_${subscription.name.replace(/\s/g, '_').toUpperCase()}`,
+        price: subscription.price,
+        quantity: quantities[index]
+      }))
+      .filter(item => item.quantity > 0);  // Filter out items with zero quantity
+
+    setCart(newCart);
+    setIsModalOpen(true);  // Open the delivery form modal
   };
 
-  const handleCloseModal = () => {
-    setIsModalOpen(false);
+  const handleQuantityChange = (index, value) => {
+    setQuantities(prev => {
+      const newQuantities = [...prev];
+      newQuantities[index] = Math.max(0, Number(value));  // Ensure quantity can't be negative
+      return newQuantities;
+    });
   };
 
   const handleFormSubmit = async (formData) => {
     try {
-      // Step 1: Create Razorpay subscription
-      const razorpayResponse = await axios.post('https://cozycatkitchen-backend.vercel.app/create-razorpay-subscription', {
-        planId: selectedPlan.planId,
-        email: formData.email,
-        phone: formData.phone
+      // Step 1: Create Razorpay subscriptions for each item in the cart
+      const promises = cart.map(async (item) => {
+        const razorpayResponse = await axios.post('https://cozycatkitchen-backend.vercel.app/create-razorpay-subscription', {
+          planId: subscriptions.find(sub => sub.name === item.name).planId,
+          email: formData.email,
+          phone: formData.phone
+        });
+
+        return razorpayResponse.data.subscription_id;
       });
 
-      const { subscription_id } = razorpayResponse.data;
+      const subscriptionIds = await Promise.all(promises);
 
-      // Step 2: Razorpay Checkout
+      // Step 2: Initiate Razorpay Checkout for all items
       const options = {
         key: 'YOUR_RAZORPAY_KEY_ID',
-        subscription_id: subscription_id,
+        subscription_id: subscriptionIds[0],  // Assuming 1st subscription for demo purposes
         name: 'Cozy Cat Kitchen',
-        description: selectedPlan.name,
+        description: cart.map(item => item.name).join(', '),  // Show all items in description
         handler: function (response) {
           alert('Payment Successful!');
           // Shiprocket order creation
           axios.post('https://cozycatkitchen-backend.vercel.app/create-shiprocket-order', {
             ...formData,
-            cart: [
-              {
-                name: selectedPlan.name,
-                sku: `SUB_${selectedPlan.name.replace(/\s/g, '_').toUpperCase()}`,
-                price: selectedPlan.price,
-                quantity: quantities[selectedPlan.index]
-              }
-            ]
+            cart: cart  // Pass cart data to create order
           });
         },
         prefill: {
@@ -91,7 +101,7 @@ const SubscriptionPlans = () => {
       alert('Payment failed, please try again.');
     }
 
-    setIsModalOpen(false);
+    setIsModalOpen(false);  // Close modal after form submission
   };
 
   return (
@@ -112,32 +122,22 @@ const SubscriptionPlans = () => {
               <li>🐾 {subscription.savings}</li>
             </ul>
             <div className="quantity-buttons">
-              <button onClick={() => setQuantities(prev => {
-                const newQuantities = [...prev];
-                newQuantities[index] = Math.max(1, newQuantities[index] - 1);
-                return newQuantities;
-              })}>-</button>
+              <button onClick={() => handleQuantityChange(index, quantities[index] - 1)}>-</button>
               <input
                 type="number"
                 value={quantities[index]}
-                onChange={(e) => setQuantities(prev => {
-                  const newQuantities = [...prev];
-                  newQuantities[index] = Math.max(1, Number(e.target.value));
-                  return newQuantities;
-                })}
-                min="1"
+                onChange={(e) => handleQuantityChange(index, e.target.value)}
+                min="0"
               />
-              <button onClick={() => setQuantities(prev => {
-                const newQuantities = [...prev];
-                newQuantities[index] += 1;
-                return newQuantities;
-              })}>+</button>
+              <button onClick={() => handleQuantityChange(index, quantities[index] + 1)}>+</button>
             </div>
-            <button className="buy-now-button" onClick={() => handleBuyNow(subscription)}>Buy Now</button>
           </div>
         ))}
       </div>
-      <DeliveryForm isOpen={isModalOpen} onRequestClose={handleCloseModal} onSubmit={handleFormSubmit} />
+      <button className="buy-now-button" onClick={updateCart}>
+        Buy Now
+      </button>
+      <DeliveryForm isOpen={isModalOpen} onRequestClose={() => setIsModalOpen(false)} onSubmit={handleFormSubmit} cart={cart} />
     </section>
   );
 };
