@@ -3,6 +3,7 @@ import './SubscriptionPlans.css';
 import DeliveryForm from './DeliveryForm';
 import { useError } from '../ErrorContext';  // Using the useError hook for global error handling
 import axios from 'axios';
+import config from '../config';  // Import the config file
 
 const subscriptions = [
   {
@@ -66,7 +67,7 @@ const SubscriptionPlans = () => {
   const handleFormSubmit = async (formData) => {
     try {
       const promises = cart.map(async (item) => {
-        const razorpayResponse = await axios.post('https://cozycatkitchen-backend.vercel.app/create-razorpay-subscription', {
+        const razorpayResponse = await axios.post(`${config.backendUrl}/create-razorpay-subscription`, {
           planId: subscriptions.find(sub => sub.name === item.name).planId,
           email: formData.email,
           phone: formData.phone
@@ -78,12 +79,12 @@ const SubscriptionPlans = () => {
       const subscriptionIds = await Promise.all(promises);
 
       const options = {
-        key: 'YOUR_RAZORPAY_KEY_ID',
+        key: config.razorpayKey,  // Use key from config
         subscription_id: subscriptionIds[0],  // Using the first subscription ID
         name: 'Cozy Cat Kitchen',
         description: cart.map(item => item.name).join(', '),
         handler: function (response) {
-          axios.post('https://cozycatkitchen-backend.vercel.app/create-shiprocket-order', {
+          axios.post(`${config.backendUrl}/create-shiprocket-order`, {
             ...formData,
             cart: cart
           }).catch(err => {
