@@ -116,7 +116,7 @@ const SubscriptionPlans = () => {
       <img src={`${process.env.PUBLIC_URL}/images/logo-white.png`} alt="Cozy Cat Kitchen Logo" className="title-logo" />
       <div className="subscription-plans">
         {subscriptions.map((subscription, index) => (
-          <div key={index} className="plan-card">
+          <div key={index} className={`plan-card ${subscription.name.toLowerCase().includes('kitten') ? 'kitten-subscription' : 'cat-subscription'}`}>
             <img src={subscription.image} alt={subscription.name} className="box-icon" />
             <h3>{subscription.name}</h3>
             <p>₹{subscription.price} / week</p>
