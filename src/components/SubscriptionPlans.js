@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import './SubscriptionPlans.css';
 import DeliveryForm from './DeliveryForm';
+import { useError } from '../ErrorContext';  // Using the useError hook for global error handling
 import axios from 'axios';
 
 const subscriptions = [
@@ -31,7 +32,8 @@ const subscriptions = [
 const SubscriptionPlans = () => {
   const [quantities, setQuantities] = useState([0, 0]);  // Allow zero quantities for both subscriptions
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [cart, setCart] = useState([]);  // Cart to hold selected products and quantities
+  const [cart, setCart] = useState([]);
+  const { showError, clearError } = useError();  // Use the useError hook for error handling
 
   const updateCart = () => {
     const newCart = subscriptions
@@ -43,7 +45,13 @@ const SubscriptionPlans = () => {
       }))
       .filter(item => item.quantity > 0);  // Filter out items with zero quantity
 
+    if (newCart.length === 0) {
+      showError('Please select at least one item to proceed.');
+      return;
+    }
+
     setCart(newCart);
+    clearError();  // Clear any existing errors
     setIsModalOpen(true);  // Open the delivery form modal
   };
 
@@ -57,7 +65,6 @@ const SubscriptionPlans = () => {
 
   const handleFormSubmit = async (formData) => {
     try {
-      // Step 1: Create Razorpay subscriptions for each item in the cart
       const promises = cart.map(async (item) => {
         const razorpayResponse = await axios.post('https://cozycatkitchen-backend.vercel.app/create-razorpay-subscription', {
           planId: subscriptions.find(sub => sub.name === item.name).planId,
@@ -70,18 +77,18 @@ const SubscriptionPlans = () => {
 
       const subscriptionIds = await Promise.all(promises);
 
-      // Step 2: Initiate Razorpay Checkout for all items
       const options = {
         key: 'YOUR_RAZORPAY_KEY_ID',
-        subscription_id: subscriptionIds[0],  // Assuming 1st subscription for demo purposes
+        subscription_id: subscriptionIds[0],  // Using the first subscription ID
         name: 'Cozy Cat Kitchen',
-        description: cart.map(item => item.name).join(', '),  // Show all items in description
+        description: cart.map(item => item.name).join(', '),
         handler: function (response) {
-          alert('Payment Successful!');
-          // Shiprocket order creation
           axios.post('https://cozycatkitchen-backend.vercel.app/create-shiprocket-order', {
             ...formData,
-            cart: cart  // Pass cart data to create order
+            cart: cart
+          }).catch(err => {
+            console.error('Error creating Shiprocket order:', err);
+            showError('Order creation failed. Please try again.');
           });
         },
         prefill: {
@@ -98,10 +105,10 @@ const SubscriptionPlans = () => {
       rzp.open();
     } catch (error) {
       console.error('Error processing payment:', error);
-      alert('Payment failed, please try again.');
+      showError('Payment failed, please try again.');
     }
 
-    setIsModalOpen(false);  // Close modal after form submission
+    setIsModalOpen(false);
   };
 
   return (
