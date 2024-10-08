@@ -15,7 +15,7 @@ const subscriptions = [
     delivery: 'Free Weekly Delivery',
     savings: 'Save ₹201/week',
     image: `${process.env.PUBLIC_URL}/images/kitten-box.webp`,
-    planId: 'plan_P16C8fYlOuifli'  // Razorpay Plan ID
+    planId: 'plan_P6Uq56nHsbjXxp'  // Razorpay Plan ID
   },
   {
     name: 'Cat Subscription',
@@ -26,7 +26,7 @@ const subscriptions = [
     delivery: 'Free Weekly Delivery',
     savings: 'Save ₹261/week',
     image: `${process.env.PUBLIC_URL}/images/cat-box.webp`,
-    planId: 'plan_P16CnSJeddGUF3'  // Razorpay Plan ID
+    planId: 'plan_P6UrNMr8tS6KJT'  // Razorpay Plan ID
   }
 ];
 
